@@ -352,3 +352,170 @@ class GrafoCampus(GrafoLista):
         self.aristas_detalle[destino].append(
             AristaCampus(origen, distancia, tiempo, congestion, accesible, estado)
         )
+
+    def dijkstra(self, origen: Any, destino: Any, criterio: str = "distancia") -> tuple:
+        if origen not in self.listaAdy or destino not in self.listaAdy:
+            return float('inf'), [], "Origen o destino no existen"
+
+        if criterio == "distancia":
+            attr = 'distancia'
+            unidad = "metros"
+        elif criterio == "tiempo":
+            attr = 'tiempo'
+            unidad = "minutos"
+        elif criterio == "congestion":
+            attr = 'congestion'
+            unidad = "nivel"
+        elif criterio == "accesible":
+            attr = None
+            unidad = "accesibilidad"
+        else:
+            return float('inf'), [], "Criterio invalido"
+
+        distancias = {v: float('inf') for v in self.listaAdy}
+        predecesores = {v: None for v in self.listaAdy}
+        distancias[origen] = 0
+
+        pq = [(0, origen)]
+
+        while pq:
+            dist_actual, u = heapq.heappop(pq)
+
+            if dist_actual > distancias[u]:
+                continue
+
+            for arista in self.aristas_detalle.get(u, []):
+                if arista.estado != "disponible":
+                    continue
+                if criterio == "accesible" and not arista.accesible:
+                    continue
+
+                peso = 0 if criterio == "accesible" else getattr(arista, attr)
+                nueva_dist = dist_actual + peso
+
+                if nueva_dist < distancias[arista.destino]:
+                    distancias[arista.destino] = nueva_dist
+                    predecesores[arista.destino] = u
+                    heapq.heappush(pq, (nueva_dist, arista.destino))
+
+        if distancias[destino] == float('inf'):
+            return float('inf'), [], "No hay ruta disponible"
+
+        # Reconstruir camino
+        camino = []
+        actual = destino
+        while actual is not None:
+            camino.append(actual)
+            actual = predecesores[actual]
+        camino.reverse()
+
+        explicacion = self._generar_explicacion(camino, criterio, distancias[destino], unidad)
+        return distancias[destino], camino, explicacion
+
+    def _generar_explicacion(self, camino: List[Any], criterio: str, costo: float, unidad: str) -> str:
+        if criterio == "distancia":
+            return f"Ruta mas corta seleccionada por distancia total ({costo:.0f} {unidad})."
+        elif criterio == "tiempo":
+            return f"Ruta mas rapida seleccionada por tiempo estimado ({costo:.0f} {unidad})."
+        elif criterio == "congestion":
+            return f"Ruta con menor congestion seleccionada (costo acumulado: {costo:.1f})."
+        else:
+            return f"Ruta 100% accesible para movilidad reducida."
+
+    # ==================== ARBOL DE EXPANSION MINIMA ====================
+    def arbolExpansionMinimo(self) -> tuple:
+        return super().arbolExpansionMinimo()
+
+
+# ==================== CREACIÓN DEL CAMPUS UdeM ====================
+def crear_campus_udem() -> GrafoCampus:
+    g = GrafoCampus()
+
+    lugares = [
+        "EntradaPrincipal", "Biblioteca", "Cafeteria", "BloqueA", "BloqueB", "BloqueC",
+        "Laboratorio1", "Laboratorio2", "Auditorio", "Enfermeria", "Parqueadero1",
+        "Parqueadero2", "ZonaDeportiva", "Teatro", "OficinasAdmin", "Capilla", "Banco"
+    ]
+
+    for lugar in lugares:
+        g.agregarVertice(lugar)
+
+    conexiones = [
+        ("EntradaPrincipal", "Biblioteca", 120, 5, 3, True),
+        ("EntradaPrincipal", "BloqueA", 80, 3, 4, True),
+        ("EntradaPrincipal", "Parqueadero1", 50, 2, 2, True),
+        ("Biblioteca", "Cafeteria", 60, 2, 5, True),
+        ("Biblioteca", "BloqueB", 90, 4, 3, True),
+        ("Cafeteria", "BloqueA", 70, 3, 6, True),
+        ("BloqueA", "Laboratorio1", 40, 2, 2, True),
+        ("BloqueA", "Auditorio", 85, 4, 4, True),
+        ("BloqueB", "Laboratorio2", 55, 3, 3, False),
+        ("BloqueB", "BloqueC", 65, 3, 4, True),
+        ("BloqueC", "OficinasAdmin", 45, 2, 2, True),
+        ("Laboratorio1", "Laboratorio2", 120, 6, 2, False),
+        ("Auditorio", "Teatro", 100, 5, 3, True),
+        ("Enfermeria", "BloqueC", 75, 4, 2, True),
+        ("Parqueadero1", "Parqueadero2", 90, 4, 5, True),
+        ("Parqueadero2", "ZonaDeportiva", 110, 5, 3, True),
+        ("ZonaDeportiva", "Teatro", 80, 4, 4, True),
+        ("OficinasAdmin", "Banco", 30, 1, 1, True),
+        ("Capilla", "Biblioteca", 95, 4, 2, True),
+        ("Banco", "EntradaPrincipal", 140, 6, 4, True),
+    ]
+
+    for o, d, dist, t, cong, acc in conexiones:
+        g.agregarConexion(o, d, dist, t, cong, acc, "disponible")
+
+    # Camino bloqueado de ejemplo
+    for arista in g.aristas_detalle.get("BloqueB", []):
+        if arista.destino == "Laboratorio2":
+            arista.estado = "bloqueado"
+
+    return g
+
+
+# ==================== MENÚ PRINCIPAL ====================
+if __name__ == "__main__":
+    grafo = crear_campus_udem()
+    
+    print("SISTEMA DE OPTIMIZACION DE RUTAS - UdeM")
+    print("=" * 60)
+
+    while True:
+        print("\nOpciones:")
+        print("1. Ruta mas corta (distancia)")
+        print("2. Ruta mas rapida (tiempo)")
+        print("3. Ruta con menor congestion")
+        print("4. Ruta accesible (movilidad reducida)")
+        print("5. Recorrido completo (Arbol de Expansion Minima)")
+        print("6. Salir")
+
+        opcion = input("\nSeleccione una opcion: ").strip()
+
+        if opcion == "6":
+            print("Hasta pronto!")
+            break
+
+        if opcion in ["1","2","3","4"]:
+            origen = input("Ingrese origen: ")
+            destino = input("Ingrese destino: ")
+            
+            criterios = {"1":"distancia", "2":"tiempo", "3":"congestion", "4":"accesible"}
+            resultado = grafo.dijkstra(origen, destino, criterios[opcion])
+            costo, ruta, explicacion = resultado
+
+            if ruta:
+                print("\nRuta encontrada:")
+                print(" -> ".join(ruta))
+                print(f"Costo total: {costo}")
+                print(explicacion)
+            else:
+                print("No se encontro ruta disponible.")
+
+        elif opcion == "5":
+            peso, conexiones = grafo.arbolExpansionMinimo()
+            print(f"\nArbol de Expansion Minima (Distancia total: {peso} metros)")
+            print("Conexiones del recorrido:")
+            for u, v, p in conexiones:
+                print(f"{u} -- {v} ({p}m)")
+
