@@ -314,53 +314,106 @@ class GrafoLista:
 
 
 
-from typing import Any, List, Dict, Tuple
-from collections import deque
+from typing import Any, List, Tuple, Dict
 import heapq
+from collections import deque
 
 
 class AristaCampus:
     def __init__(self, destino: Any, distancia: int, tiempo: int, 
                  congestion: int, accesible: bool, estado: str = "disponible"):
         self.destino = destino
-        self.distancia = distancia          
-        self.tiempo = tiempo                
-        self.congestion = congestion        
-        self.accesible = accesible          
-        self.estado = estado                
-
-    def __repr__(self):
-        return f"{self.destino}(d={self.distancia},t={self.tiempo},c={self.congestion})"
+        self.distancia = distancia
+        self.tiempo = tiempo
+        self.congestion = congestion
+        self.accesible = accesible
+        self.estado = estado
 
 
 
-class GrafoCampus:
+class GrafoCampus(GrafoLista):
+
     def __init__(self):
-        self.listaAdy: Dict[Any, List[AristaCampus]] = {}
-        self.tamano: int = 0
+        super().__init__()
+        self.aristas_detalle: Dict[Any, List[AristaCampus]] = {}
 
-    def agregarVertice(self, valor: Any):
-        if valor not in self.listaAdy:
-            self.listaAdy[valor] = []
-            self.tamano += 1
-
+   
     def agregarConexion(self, origen: Any, destino: Any, distancia: int, tiempo: int,
-                       congestion: int, accesible: bool, estado: str = "disponible", dirigido: bool = False):
+                       congestion: int, accesible: bool, estado: str = "disponible"):
         
-        self.agregarVertice(origen)
-        self.agregarVertice(destino)
 
-        # Verificar si ya existe la conexion
-        for arista in self.listaAdy[origen]:
-            if arista.destino == destino:
-                return
+        super().agregarConexion(origen, destino, dirigido=False, peso=distancia)
+        
+        # Guardamos la información detallada
+        if origen not in self.aristas_detalle:
+            self.aristas_detalle[origen] = []
+        if destino not in self.aristas_detalle:
+            self.aristas_detalle[destino] = []
 
-        self.listaAdy[origen].append(AristaCampus(destino, distancia, tiempo, 
-                                                 congestion, accesible, estado))
+        self.aristas_detalle[origen].append(
+            AristaCampus(destino, distancia, tiempo, congestion, accesible, estado)
+        )
+        self.aristas_detalle[destino].append(
+            AristaCampus(origen, distancia, tiempo, congestion, accesible, estado)
+        )
 
-        if not dirigido:
-            for arista in self.listaAdy[destino]:
-                if arista.destino == origen:
-                    return
-            self.listaAdy[destino].append(AristaCampus(origen, distancia, tiempo, 
-                                                     congestion, accesible, estado))
+
+    def dijkstra(self, origen: Any, destino: Any, criterio: str = "distancia") -> Tuple[float, List[Any], str]:
+        if origen not in self.listaAdy or destino not in self.listaAdy:
+            return float('inf'), [], "Origen o destino no existen"
+
+        # Configuración según criterio
+        if criterio == "distancia":
+            attr = 'distancia'
+            unidad = "metros"
+        elif criterio == "tiempo":
+            attr = 'tiempo'
+            unidad = "minutos"
+        elif criterio == "congestion":
+            attr = 'congestion'
+            unidad = "nivel"
+        elif criterio == "accesible":
+            attr = None
+            unidad = "accesibilidad"
+        else:
+            return float('inf'), [], "Criterio invalido"
+
+        distancias = {v: float('inf') for v in self.listaAdy}
+        predecesores = {v: None for v in self.listaAdy}
+        distancias[origen] = 0
+
+        pq = [(0, origen)]
+
+        while pq:
+            dist_actual, u = heapq.heappop(pq)
+
+            if dist_actual > distancias[u]:
+                continue
+
+            for arista in self.aristas_detalle.get(u, []):
+                if arista.estado != "disponible":
+                    continue
+                if criterio == "accesible" and not arista.accesible:
+                    continue
+
+                peso = 0 if criterio == "accesible" else getattr(arista, attr)
+                nueva_dist = dist_actual + peso
+
+                if nueva_dist < distancias[arista.destino]:
+                    distancias[arista.destino] = nueva_dist
+                    predecesores[arista.destino] = u
+                    heapq.heappush(pq, (nueva_dist, arista.destino))
+
+        if distancias[destino] == float('inf'):
+            return float('inf'), [], "No hay ruta disponible"
+
+        # Reconstruir ruta
+        camino = []
+        actual = destino
+        while actual is not None:
+            camino.append(actual)
+            actual = predecesores[actual]
+        camino.reverse()
+
+        explicacion = self._generar_explicacion(camino, criterio, distancias[destino], unidad)
+        return distancias[destino], camino, explicacion
