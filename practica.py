@@ -401,7 +401,7 @@ class GrafoCampus(GrafoLista):
         if distancias[destino] == float('inf'):
             return float('inf'), [], "No hay ruta disponible"
 
-        # Reconstruir camino
+        
         camino = []
         actual = destino
         while actual is not None:
@@ -422,12 +422,12 @@ class GrafoCampus(GrafoLista):
         else:
             return f"Ruta 100% accesible para movilidad reducida."
 
-    # ==================== ARBOL DE EXPANSION MINIMA ====================
+    
     def arbolExpansionMinimo(self) -> tuple:
         return super().arbolExpansionMinimo()
 
 
-# ==================== CREACIÓN DEL CAMPUS UdeM ====================
+
 def crear_campus_udem() -> GrafoCampus:
     g = GrafoCampus()
 
@@ -466,7 +466,7 @@ def crear_campus_udem() -> GrafoCampus:
     for o, d, dist, t, cong, acc in conexiones:
         g.agregarConexion(o, d, dist, t, cong, acc, "disponible")
 
-    # Camino bloqueado de ejemplo
+  
     for arista in g.aristas_detalle.get("BloqueB", []):
         if arista.destino == "Laboratorio2":
             arista.estado = "bloqueado"
@@ -474,7 +474,7 @@ def crear_campus_udem() -> GrafoCampus:
     return g
 
 
-# ==================== MENÚ PRINCIPAL ====================
+
 if __name__ == "__main__":
     grafo = crear_campus_udem()
     
