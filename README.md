@@ -2,16 +2,16 @@
 
 ## Descripción del proyecto
 
-Este proyecto modela el campus de la Universidad de Medellín como un **grafo** para ayudar a estudiantes, docentes y visitantes a encontrar las mejores rutas entre diferentes lugares.
+Este proyecto consiste en un sistema que modela el campus de la Universidad de Medellín como un **grafo**, permitiendo encontrar rutas óptimas entre diferentes lugares según diversos criterios. 
 
-Cada lugar del campus es un **vértice** y los caminos son **aristas** que contienen múltiples atributos:
-- Distancia en metros
-- Tiempo estimado en minutos
+Cada lugar es un **vértice** y los caminos entre ellos son **aristas** con múltiples atributos:
+- Distancia (metros)
+- Tiempo estimado (minutos)
 - Nivel de congestión (1-10)
 - Accesibilidad para personas con movilidad reducida
-- Estado del camino (disponible, bloqueado, mantenimiento)
+- Estado del camino (disponible, bloqueado o en mantenimiento)
 
-El sistema permite calcular rutas óptimas según diferentes criterios y generar un recorrido completo por el campus usando Árbol de Expansión Mínima.
+El sistema cumple con todos los requerimientos de la práctica: Dijkstra modificado con múltiples criterios, ignorar caminos bloqueados, Árbol de Expansión Mínima, entre otros.
 
 ---
 
@@ -19,28 +19,39 @@ El sistema permite calcular rutas óptimas según diferentes criterios y generar
 
 ### Estructura principal:
 
-1. **Clase `AristaCampus`**:
-   - Almacena toda la información de cada camino (distancia, tiempo, congestión, accesibilidad y estado).
+- **`AristaCampus`**: Clase que almacena toda la información detallada de cada camino.
+- **`GrafoCampus`**: Hereda de la clase base `GrafoLista` proporcionada en clase. Sobrescribe `agregarConexion()` para soportar múltiples atributos por arista.
+- **Dijkstra Modificado**: Implementación personalizada que permite optimizar según 4 criterios diferentes.
+- **Árbol de Expansión Mínima**: Reutiliza el método original de la clase base.
 
-2. **Clase `GrafoCampus`** (hereda de `GrafoLista`):
-   - Extiende la clase base proporcionida en clase.
-   - Sobrescribe `agregarConexion()` para guardar tanto el peso (distancia) como toda la información adicional.
+### Menú Principal y Funcionalidades
 
-3. **Algoritmo Dijkstra Modificado** (`dijkstra()`):
-   - Permite elegir entre 4 criterios de optimización:
-     - Ruta más corta (distancia)
-     - Ruta más rápida (tiempo)
-     - Ruta con menor congestión
-     - Ruta accesible (solo usa caminos aptos para movilidad reducida)
-   - Ignora automáticamente caminos bloqueados o en mantenimiento.
-   - Usa cola de prioridad (`heapq`) para mayor eficiencia.
+Al ejecutar el programa, aparece el siguiente menú:
 
-4. **Árbol de Expansión Mínima**:
-   - Reutiliza el método original de la clase base `GrafoLista`.
-   - Calcula el recorrido de menor distancia que conecta todos los lugares.
+1. **Ruta más corta (distancia)**  
+   Calcula la ruta con la menor distancia total en metros.
 
-5. **Menú interactivo**:
-   - Permite al usuario seleccionar el tipo de ruta y los puntos de origen/destino.
+2. **Ruta más rápida (tiempo)**  
+   Calcula la ruta con el menor tiempo estimado de recorrido (en minutos).
+
+3. **Ruta con menor congestión**  
+   Calcula la ruta que acumula el menor nivel de congestión.
+
+4. **Ruta accesible (movilidad reducida)**  
+   Calcula una ruta que solo utiliza caminos accesibles para personas con movilidad reducida. Ignora automáticamente los caminos no accesibles.
+
+5. **Recorrido completo (Árbol de Expansión Mínima)**  
+   Muestra un recorrido que visita todos los lugares del campus sin repetir ninguno, utilizando la menor distancia total posible (ideal para visitantes).
+
+6. **Salir**  
+   Termina la ejecución del programa.
+
+**Características generales del sistema:**
+- Ignora automáticamente caminos en estado "bloqueado" o "en mantenimiento".
+- Reconstruye y muestra la ruta completa (origen → ... → destino).
+- Muestra el costo total según el criterio seleccionado.
+- Proporciona una breve explicación de por qué se seleccionó esa ruta.
+- El grafo contiene **17 lugares** representativos del campus.
 
 ---
 
@@ -49,11 +60,11 @@ El sistema permite calcular rutas óptimas según diferentes criterios y generar
 ### Requisitos
 - Python 3.8 o superior
 
-### Pasos:
+### Pasos para ejecutar:
 
-1. Descargar o clonar el repositorio.
-2. Abrir una terminal en la carpeta del proyecto.
-3. Ejecutar el siguiente comando:
+1. Clonar o descargar el repositorio.
+2. Ubicarse en la carpeta del proyecto.
+3. Ejecutar el programa con:
 
    ```bash
    python grafo_udem.py
